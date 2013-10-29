@@ -3,4 +3,5 @@ description = A simple Feature to show the inner workings of Drupal Features
 core = 7.x
 package = vzbv
 dependencies[] = vzbv_core
+dependencies[] = cmis_field
 features[features_api][] = api:2

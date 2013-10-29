@@ -1,5 +1,83 @@
 <?php
+
 /**
- * @file
- * Drupal needs this blank file.
+ * Allow CMIS fields to be themed via Drupal Theming
+ *
+ * @implements hook_theme()
  */
+function vzbv_scm_cmis_field_theme() {
+  $items['cmis_field_display'] = array(
+    'template' => 'vzbv-scm-cmis-field',
+    'render element' => 'field_info'
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_field_formatter_info()
+ *
+ * @return array
+ */
+function vzbv_scm_cmis_field_field_formatter_info() {
+  return array(
+    'cmis_field_link' => array(
+       'label' => t('CMIS browser'),
+       'field types' => array('cmis_field_path')
+    )
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ *
+ */
+
+function vzbv_scm_cmis_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  module_load_include('api.inc', 'cmis');
+  
+  $element = array();
+  switch ($display['type']) {
+    case 'cmis_field_link':
+      foreach ($items as $delta => $item) {
+        $repo = cmis_get_repository();
+        $object = cmisapi_getObject($repo->repositoryId, $item['path']);
+        $props = array();
+
+        if (isset($object->properties['cm:title'])) {
+          $title = $object->properties['cm:title'];
+        }
+        else {
+          $title = $object->properties['cmis:name'];
+        }
+        
+        $props['link'] = l($title, 'cmis/browser', array('query' => array('id'=> $item['path'])));
+
+        $props['title'] =  $title;
+
+        if (isset($object->properties['cm:description'])) {
+          $props['description'] =  $object->properties['cm:description'];
+        }
+        else {
+          $props['description'] = ""; 
+        }
+
+        $props['mtime'] = array();
+        $mtime = new DateTime($object->properties['cmis:lastModificationDate']);
+        $props['mtime']['label'] = t('Last changed');
+        $props['mtime']['timestamp'] = $mtime->getTimestamp();
+        $props['mtime']['formatted'] = format_date($props['mtime']['timestamp']);
+        $props['mtime']['datetime'] = $mtime;
+
+        $props['size'] = array();
+        $props['size']['label'] = t('Filesize');
+        $props['size']['bytes'] = $object->properties['cmis:contentStreamLength'];
+        $props['size']['formatted'] = format_size($props['size']['bytes']);
+        
+        $element[$delta]['#markup'] = theme('cmis_field_display', $props);
+      }
+      break;
+  }
+  return $element;
+}
