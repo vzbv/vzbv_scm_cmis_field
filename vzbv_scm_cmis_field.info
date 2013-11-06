@@ -4,4 +4,5 @@ core = 7.x
 package = vzbv
 dependencies[] = vzbv_core
 dependencies[] = cmis_field
+dependencies[] = cmis_common
 features[features_api][] = api:2
